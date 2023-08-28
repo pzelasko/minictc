@@ -63,7 +63,7 @@ int main(int argc, const char *const *const argv) {
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-    std::cout << duration << "us total, average : " << static_cast<double>(duration) / iterations << "us." << std::endl;
+    std::cout << "[bs=1] " << duration << "us total, average : " << static_cast<double>(duration) / iterations << "us." << std::endl;
   }
 
   // single item CTC grad
@@ -116,7 +116,7 @@ int main(int argc, const char *const *const argv) {
     const auto mean = static_cast<double>(duration) / iterations;
     const auto per_item = mean / batch_size;
 
-    std::cout << duration << "us total, average: " << mean << "us, per item: " << per_item << "us." << std::endl;
+    std::cout << "[bs=32] " << duration << "us total, average: " << mean << "us, per item: " << per_item << "us." << std::endl;
   }
 
 

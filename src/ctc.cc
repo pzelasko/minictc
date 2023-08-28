@@ -15,14 +15,14 @@ constexpr float logsumexp(const float x, const float y) {
 }
 
 template<typename Vec>
-float get(const Vec &arr, const int S, const int T, const int s, const int t) {
+float get(const Vec &__restrict__ arr, const int S, const int T, const int s, const int t) {
   if (-1 < s && s < S && -1 < t && t < T) {
     return arr[s + S*t];
   }
   return -INFINITY;
 }
 
-std::vector<int> with_blanks(const int * const targets, const int num_targets, const int blank_idx) {
+std::vector<int> with_blanks(const int *__restrict__ const targets, const int num_targets, const int blank_idx) {
   std::vector x{blank_idx};
   for (int i = 0; i != num_targets; ++i) {
     x.push_back(targets[i]);
@@ -33,8 +33,8 @@ std::vector<int> with_blanks(const int * const targets, const int num_targets, c
 }
 
 std::vector<float> compute_alpha(
-  const float *const logprobs,
-  const int *const targets,
+  const float *__restrict__ const logprobs,
+  const int *__restrict__ const targets,
   const int num_frames,
   const int num_tokens,
   const int num_targets,
@@ -85,8 +85,8 @@ std::vector<float> compute_alpha(
 
 
 std::vector<float> compute_beta(
-  const float *const logprobs,
-  const int *const targets,
+  const float *__restrict__ const logprobs,
+  const int *__restrict__ const targets,
   const int num_frames,
   const int num_tokens,
   const int num_targets,
@@ -133,14 +133,14 @@ std::vector<float> compute_beta(
 }
 
 void compute_ctc_grad_single(
-  const float *const logprobs,
-  const int *const targets,
+  const float *__restrict__ const logprobs,
+  const int *__restrict__ const targets,
   const int num_frames,
   const int num_tokens,
   const int num_targets,
   const int blank_idx,
-  float *const loss_value,
-  float *const grad
+  float *__restrict__ const loss_value,
+  float *__restrict__ const grad
 ) {
   const auto target_blank = internal::with_blanks(targets, num_targets, blank_idx);
   const int path_len = static_cast<int>(target_blank.size());
@@ -186,14 +186,14 @@ void compute_ctc_grad_single(
 }
 
 std::vector<float> compute_ctc_grad(
-  const float *const logprobs,
-  const int *const targets,
+  const float *__restrict__ const logprobs,
+  const int *__restrict__ const targets,
   const int batch_size,
-  const int *const num_frames,
+  const int *__restrict__ const num_frames,
   const int num_tokens,
-  const int *const num_targets,
+  const int *__restrict__ const num_targets,
   const int blank_idx,
-  float *const loss_value
+  float *__restrict__ const loss_value
 ) {
 
   // I ran into some issue with -Xclang -fopenmp and structured bindings here
@@ -214,7 +214,7 @@ std::vector<float> compute_ctc_grad(
   std::vector<float> grad(numel);
 
   // I "borrowed" this simple parallelization trick here from warp_ctc
-#pragma omp parallel for default(shared)
+#pragma omp parallel for
   for (int b = 0; b != batch_size; ++b) {
     compute_ctc_grad_single(
       logprobs + logprob_offsets[b],
