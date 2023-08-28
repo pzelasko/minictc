@@ -16,14 +16,15 @@ std::vector<float> compute_ctc_grad(
   float *const loss_value
 );
 
-std::vector<float> compute_ctc_grad_single(
+void compute_ctc_grad_single(
   const float *const logprobs,
   const int *const targets,
   const int num_frames,
   const int num_tokens,
   const int num_targets,
   const int blank_idx,
-  float *const loss_value
+  float *const loss_value,
+  float *const grad
 );
 
 std::vector<float> compute_alpha(

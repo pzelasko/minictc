@@ -56,8 +56,9 @@ int main(int argc, const char *const *const argv) {
     uint32_t iterations = 10000;
     for (uint32_t i = 0; i < iterations; ++i) {
       float loss;
-      const auto grad = tcrowns::compute_ctc_grad_single(
-        logprobs.data(), target.data(), T, vocabulary.size(), target.size(), blank_idx, &loss
+      vector<float> grad(logprobs.size());
+      tcrowns::compute_ctc_grad_single(
+        logprobs.data(), target.data(), T, vocabulary.size(), target.size(), blank_idx, &loss, grad.data()
       );
     }
     auto end = std::chrono::high_resolution_clock::now();
@@ -68,8 +69,9 @@ int main(int argc, const char *const *const argv) {
   // single item CTC grad
   {
     float loss;
-    const auto grad = tcrowns::compute_ctc_grad_single(
-      logprobs.data(), target.data(), T, vocabulary.size(), target.size(), blank_idx, &loss
+    vector<float> grad(logprobs.size());
+    tcrowns::compute_ctc_grad_single(
+      logprobs.data(), target.data(), T, vocabulary.size(), target.size(), blank_idx, &loss, grad.data()
     );
 
     std::cout << "loss=" << loss << "\n";

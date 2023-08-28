@@ -1,5 +1,4 @@
 #include <cmath>
-#include <numeric>
 
 #include "ctc.h"
 
@@ -56,7 +55,10 @@ std::vector<float> compute_alpha(
   alpha[1] = logprobs[target_blank[1]];
 
   for (int t = 1; t != num_frames; ++t) {
-    for (int s = 0; s != path_len; ++s) {
+    // skip iterating over (s,t) indexes that are unreachable (bottom-left and top-right areas)
+    const auto s_begin = std::max(0, 2 * (t - num_frames) + path_len),
+               s_end = std::min(path_len, (t + 1) * 2);
+    for (int s = s_begin; s != s_end; ++s) {
       const auto current_label = target_blank[s];
       const auto previous_label = s - 2 > -1 ? target_blank[s - 2] : -1;
       // likelihood of getting here via any possible path
@@ -76,23 +78,6 @@ std::vector<float> compute_alpha(
         alpha[s + path_len * t] = logsumexp(previous_alpha, internal::get(alpha, path_len, num_frames, s - 2, t - 1)) + current_observation_likelihood;
       }
     }
-  }
-
-  // zero out the prob of paths that did not reach the end
-  // t=-1 => s=-3::-1
-  // t=-2 => s=-5::-1
-  // t=-3 => s=-7::-1
-  int t = -1;
-  while(true) {
-    int s = 2 * t - 1;
-    if (path_len + s < 0) {
-      break;
-    }
-    while (path_len + s > -1) {
-      alpha[(path_len + s) + path_len  * (num_frames + t)] = -INFINITY;
-      s -= 1;
-    }
-    t -= 1;
   }
 
   return alpha;
@@ -122,7 +107,10 @@ std::vector<float> compute_beta(
   beta[path_len - 2 + path_len * (num_frames - 1)] = logprobs[target_blank.back() + num_tokens * (num_frames - 1)];
 
   for (int t = num_frames - 2; t != -1; --t) {
-    for (int s = path_len - 1; s != -1; --s) {
+    // skip iterating over (s,t) indexes that are unreachable (bottom-left and top-right areas)
+    const auto s_begin = std::max(0, 2 * (t - num_frames) + path_len) - 1,
+      s_end = std::min(path_len, (t + 1) * 2) - 1;
+    for (int s = s_end; s != s_begin; --s) {
       const auto current_label = target_blank[s];
       const auto next_label = s + 2 < path_len ? target_blank[s + 2] : -1;
       const auto next_beta = logsumexp(
@@ -141,35 +129,18 @@ std::vector<float> compute_beta(
     }
   }
 
-  // zero out the prob of paths that did not reach the beginning
-  // s = 2t + 2
-  // t=0 => s=2:
-  // t=1 => s=4:
-  // t=2 => s=6:
-  int t = 0;
-  while(true) {
-    int s = 2 * t + 2;
-    if (path_len - s < 0) {
-      break;
-    }
-    while (path_len - s > 0) {
-      beta[s + path_len * t] = -INFINITY;
-      s += 1;
-    }
-    t += 1;
-  }
-
   return beta;
 }
 
-std::vector<float> compute_ctc_grad_single(
+void compute_ctc_grad_single(
   const float *const logprobs,
   const int *const targets,
   const int num_frames,
   const int num_tokens,
   const int num_targets,
   const int blank_idx,
-  float *const loss_value
+  float *const loss_value,
+  float *const grad
 ) {
   const auto target_blank = internal::with_blanks(targets, num_targets, blank_idx);
   const int path_len = static_cast<int>(target_blank.size());
@@ -190,8 +161,9 @@ std::vector<float> compute_ctc_grad_single(
   }
 
   const auto numel = num_frames * num_tokens;
-  std::vector<float> d_logprobs;
-  for (int i = 0; i != numel; ++i) { d_logprobs.push_back(std::exp(logprobs[i])); }
+  for (int i = 0; i != numel; ++i) {
+    grad[i] = std::exp(logprobs[i]);
+  }
 
   for (int t = 0; t != num_frames; ++t) {
     float Z_t = 0;
@@ -207,12 +179,10 @@ std::vector<float> compute_ctc_grad_single(
         }
       }
       if (sum_alpha_beta_s_t > 0) {
-        d_logprobs[k + num_tokens * t] -= 1 / (d_logprobs[k + num_tokens * t] * Z_t) * sum_alpha_beta_s_t;
+        grad[k + num_tokens * t] -= 1 / (grad[k + num_tokens * t] * Z_t) * sum_alpha_beta_s_t;
       }
     }
   }
-
-  return d_logprobs;
 }
 
 std::vector<float> compute_ctc_grad(
@@ -244,19 +214,18 @@ std::vector<float> compute_ctc_grad(
   std::vector<float> grad(numel);
 
   // I "borrowed" this simple parallelization trick here from warp_ctc
-#pragma omp parallel for
+#pragma omp parallel for default(shared)
   for (int b = 0; b != batch_size; ++b) {
-    const auto grad_b = compute_ctc_grad_single(
+    compute_ctc_grad_single(
       logprobs + logprob_offsets[b],
       targets + target_offsets[b],
       num_frames[b],
       num_tokens,
       num_targets[b],
       blank_idx,
-      loss_value + b
+      loss_value + b,
+      grad.data() + logprob_offsets[b]
     );
-    // To be maximally efficient the API needs to be reworked to allow writing directly into the output.
-    std::copy(grad_b.cbegin(), grad_b.cend(), grad.begin() + logprob_offsets[b]);
   }
 
   return grad;
