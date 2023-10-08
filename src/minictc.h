@@ -3,7 +3,7 @@
 
 #include <span>
 
-namespace tcrowns {
+namespace minictc {
 
 std::vector<float> compute_ctc_grad(
   const float *const logprobs,

@@ -36,7 +36,7 @@ int main(int argc, const char *const *const argv) {
 
   printmtx(logprobs, K, T, "logprobs");
 
-  const auto alpha = tcrowns::compute_alpha(
+  const auto alpha = minictc::compute_alpha(
     logprobs.data(), target.data(), T, vocabulary.size(), target.size(), blank_idx
   );
 
@@ -44,7 +44,7 @@ int main(int argc, const char *const *const argv) {
 
   printmtx(alpha, S, T, "alpha");
 
-  const auto beta = tcrowns::compute_beta(
+  const auto beta = minictc::compute_beta(
     logprobs.data(), target.data(), T, vocabulary.size(), target.size(), blank_idx
   );
 
@@ -57,7 +57,7 @@ int main(int argc, const char *const *const argv) {
     for (uint32_t i = 0; i < iterations; ++i) {
       float loss;
       vector<float> grad(logprobs.size());
-      tcrowns::compute_ctc_grad_single(
+      minictc::compute_ctc_grad_single(
         logprobs.data(), target.data(), T, vocabulary.size(), target.size(), blank_idx, &loss, grad.data()
       );
     }
@@ -70,7 +70,7 @@ int main(int argc, const char *const *const argv) {
   {
     float loss;
     vector<float> grad(logprobs.size());
-    tcrowns::compute_ctc_grad_single(
+    minictc::compute_ctc_grad_single(
       logprobs.data(), target.data(), T, vocabulary.size(), target.size(), blank_idx, &loss, grad.data()
     );
 
@@ -101,7 +101,7 @@ int main(int argc, const char *const *const argv) {
     const uint32_t iterations = 10000;
     for (uint32_t i = 0; i < iterations; ++i) {
       vector<float> loss(batch_size, 0);
-      const auto grad = tcrowns::compute_ctc_grad(
+      const auto grad = minictc::compute_ctc_grad(
         logprobs_batch.data(),
         target_batch.data(),
         batch_size,
@@ -137,7 +137,7 @@ int main(int argc, const char *const *const argv) {
     vector Ss = {static_cast<int>(target.size()), static_cast<int>(target.size())};
     vector<float> loss(batch_size, 0);
 
-    const auto grad = tcrowns::compute_ctc_grad(
+    const auto grad = minictc::compute_ctc_grad(
       logprobs_batch.data(),
       target_batch.data(),
       batch_size,

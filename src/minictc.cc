@@ -2,7 +2,7 @@
 
 #include "minictc.h"
 
-namespace tcrowns {
+namespace minictc {
 
 namespace internal {
 
