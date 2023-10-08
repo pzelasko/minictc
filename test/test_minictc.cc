@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "ctc.h"
+#include "minictc.h"
 
 void printmtx(const auto &mtx, const int n_rows, const int n_cols, std::string_view name = "") {
   using std::cout;

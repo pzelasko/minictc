@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
-project(3crowns)
+project(minictc)
 
 ## Check if using Apple Clang
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")

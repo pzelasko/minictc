@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "ctc.h"
+#include "minictc.h"
 
 namespace tcrowns {
 
@@ -195,6 +195,10 @@ std::vector<float> compute_ctc_grad(
   const int blank_idx,
   float *__restrict__ const loss_value
 ) {
+  // mini-batch version where logprobs is of 'shape' (batch, num_vocab, time)
+  // and targets is of 'shape' (batch, num_labels)
+  // it does support "ragged" tensors where each example has a different time and label dim;
+  // use num_frames and num_targets arrays to specify the dimensions for each example
 
   // I ran into some issue with -Xclang -fopenmp and structured bindings here
   // const auto [logprob_offsets, target_offsets] = [=] {
