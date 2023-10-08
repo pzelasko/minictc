@@ -42,7 +42,6 @@ std::vector<float> compute_alpha(
 ) {
   using internal::logsumexp;
   using std::vector;
-  using std::span;
 
   // indexing alpha: [target_label_idx, time_idx]
   // indexing probs: [vocabulary_label_idx, time_idx]
@@ -94,7 +93,6 @@ std::vector<float> compute_beta(
 ) {
   using internal::logsumexp;
   using std::vector;
-  using std::span;
 
   // indexing beta: [target_label_idx, time_idx]
   // indexing probs: [vocabulary_label_idx, time_idx]

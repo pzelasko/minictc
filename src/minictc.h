@@ -1,7 +1,7 @@
-#ifndef INC_3CROWNS_CTC_H
-#define INC_3CROWNS_CTC_H
+#ifndef INC_MINICTC_MINICTC_H
+#define INC_MINICTC_MINICTC_H
 
-#include <span>
+#include <vector>
 
 namespace minictc {
 
@@ -47,4 +47,5 @@ std::vector<float> compute_beta(
 
 }
 
-#endif //INC_3CROWNS_CTC_H
+#endif //INC_MINICTC_MINICTC_H
+
